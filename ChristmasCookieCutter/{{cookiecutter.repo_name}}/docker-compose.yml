@@ -1,0 +1,53 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: my_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jacktable
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-U", "postgres"]
+      interval: 5s
+      timeout: 1s
+      retries: 2
+
+  flyway:
+    image: flyway/flyway:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/jacktable
+      - FLYWAY_USER=postgres
+      - FLYWAY_PASSWORD=postgres
+    command: migrate
+    volumes:
+      - ./sql:/flyway/sql
+
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Assuming your Dockerfile is in the same directory as your app.py
+    container_name: my_fastapi_app
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      PORT: 80
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB_NAME: jacktable
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+

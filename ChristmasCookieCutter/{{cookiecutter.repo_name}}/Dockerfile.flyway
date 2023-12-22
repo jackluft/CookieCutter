@@ -1,0 +1,7 @@
+# Dockerfile.flyway
+FROM boxfuse/flyway:7.15.0
+
+WORKDIR /flyway/sql
+
+COPY ./sql /flyway/sql
+
