@@ -1,1 +1,0 @@
-To connect to the database create a Database object in the main.py file. To execute commands to the database use the execute_command() function built into the Database object.
