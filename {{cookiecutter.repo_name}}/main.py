@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, status, Depends,Security
+from fastapi import FastAPI, Response, status, Depends,Security, HTTPException
 import psycopg2 as ps
 from pydantic import BaseModel
 from psycopg2 import pool, sql
@@ -7,6 +7,7 @@ from typing import Optional, Dict, List
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer,HTTPAuthorizationCredentials
 from datetime import datetime, time, timedelta
+from fastapi.responses import JSONResponse
 import jwt
 import os
 import ast
@@ -56,7 +57,7 @@ class AuthHandler():
 		except jwt.ExpiredSignatureError:
 			raise  HTTPException(status_code=401,detail="signature has expired")
 		except jwt.InvalidTokenError as e:
-			raise HTTPException(status_code=401,detail="Invalod token")
+			raise HTTPException(status_code=401,detail="Invalid token")
 	def auth_wrapper(self,auth: HTTPAuthorizationCredentials = Security(security)):
 		return self.decode_token(auth.credentials)
 
@@ -156,6 +157,19 @@ class Database:
 		except Exception as e:
 			print(f"ERROR in element_exist: {e}")
 			return False
+	def create_elf(self, elf: AuthDetails):
+		#This function will create a elf in the database
+		try:
+			command =f"INSERT INTO elf (name, password) VALUES ('{elf.name}','{elf.password}');"
+			with self.pool.getconn() as self.connection:
+				with self.connection.cursor() as self.cursor:
+					self.cursor.execute(command)
+					self.connection.commit()
+					return True
+
+		except Exception as e:
+			print(f"ERROR in create_elf: {e}")
+			return False
 	def getChristmasList(self):
 		try:
 			christmas_list = []
@@ -207,14 +221,22 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 @app.post("/login",tags=["Authentication"],description="This will be the login in url, for elfs to get their Auth Token")
 async def login(account: AuthDetails):
 	#This is the login page to get the token
-	exist = connection.check_elf_exist(account)
-	if exist:
-		token = auth_handler.encode_token("jluft0661@gmial.com")
-		return {"Token" : token}
-	return {"elf is not in the database"}
+    exist = connection.check_elf_exist(account)
+    if exist:
+        token = auth_handler.encode_token(account.name)
+        data= {"Token" : token}
+        return JSONResponse(content=data, status_code=200)
+    content = {"ERROR" : "elf is not in the database"}
+    return JSONResponse(content=content,status_code=400)
+
 @app.post("/create-account",tags=["Authentication"],description="This will let you create an Elf account in the database.")
 async def create_account(account: AuthDetails):
-	return {"None"}
+    results = connection.create_elf(account)
+    if results:
+        content = {"message" : "Elf created in the database"}
+        return JSONResponse(content=content,status_code=201)
+    content = {"Error": "Unable to create elf in database"}
+    return JSONResponse(content=content,status_code=400)
 
 #get offerations
 @app.get("/christmas-list",tags=["API calls"],description="This will return all the items on Santas Christams list")
@@ -225,28 +247,31 @@ async def get_toys(token = Depends(auth_handler.auth_wrapper)) -> List[Item]:
 #post offeration
 @app.post("/christmas-list",tags=["API calls"],description="This function will let you add an item to Santas christmas list")
 async def create(item: Item,token = Depends(auth_handler.auth_wrapper)):
-	response = connection.insert(item)
-	if response:
-		return {"Added to database"}
-	return {"ERROR"}
+    response = connection.insert(item)
+    if response:
+        content = {"message" : "Added to database"}
+        return JSONResponse(content=content,status_code=201)
+    content = {"Error" : "Unable to add to chirstmas list"}
+    return JSONResponse(content=content,status_code=400)
 
 #delete operation
 @app.delete("/christmas-list",tags=["API calls"],description="This will let you delete an item from Santas Christams list, by specifiy the ID of the item",status_code=201)
 async def delete(item_id:int,response: Response,token = Depends(auth_handler.auth_wrapper)):
-	result = connection.delete_element(item_id)
-	if result:
-		response.status_code = status.HTTP_201_CREATED
-		return {"successfully delete element from database"}
-	response.status_code = status.HTTP_404_NOT_FOUND
-	return {"Coud not delete element from database"}
+    result = connection.delete_element(item_id)
+    if result:
+        content = {"Message" : "successfully delete element from database"}
+        return JSONResponse(content=content,status_code=201)
+    content = {"Error" : "Coud not delete element from database"}
+    return JSONResponse(content=content,status_code=404)
 
 @app.patch("/add-to-wish",tags=["API calls"],description="This will let you add toys to your christmas list")
 async def edit_list(item_id: int,toys: Toys,token = Depends(auth_handler.auth_wrapper)):
 	#This function will update the christmas list base on the id
 	result = connection.add_to_christmasList(item_id,toys)
 	if result:
-		return {"successfully added toys to Christams list🎅"}
-	return {"Unable to add toys to Christams lsit, make sure the ID is valid"}
+		return JSONResponse(content={"successfully added toys to Christams list🎅"},status_code=201)
+	return JSONResponse(content={"Unable to add toys to Christams lsit, make sure the ID is valid"},status_code=400)
+
 @app.delete("/remove-from-christmas",tags=["API calls"],description="This will let you delete toyos off your Christmas list")
 async def delete_list(id: int,toys: Toys,token = Depends(auth_handler.auth_wrapper)):
 	#This function will delete toys off christmas list based on the id
