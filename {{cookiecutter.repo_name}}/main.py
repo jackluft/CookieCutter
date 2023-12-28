@@ -1,18 +1,14 @@
-from fastapi import FastAPI, Response, status, Depends,Security, HTTPException
-import psycopg2 as ps
+from fastapi import FastAPI, Response, Depends,Security, HTTPException
 from pydantic import BaseModel
-from psycopg2 import pool, sql
+from psycopg2 import pool
 from psycopg2.extras import execute_values
-from typing import Optional, Dict, List
+from typing import Optional, List
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer,HTTPAuthorizationCredentials
-from datetime import datetime, time, timedelta
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer,HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 import jwt
 import os
-import ast
 import uvicorn
-import json
 import sys
 
 PORT = os.getenv("PORT")
@@ -56,7 +52,7 @@ class AuthHandler():
 			return payload['sub']
 		except jwt.ExpiredSignatureError:
 			raise  HTTPException(status_code=401,detail="signature has expired")
-		except jwt.InvalidTokenError as e:
+		except jwt.InvalidTokenError:
 			raise HTTPException(status_code=401,detail="Invalid token")
 	def auth_wrapper(self,auth: HTTPAuthorizationCredentials = Security(security)):
 		return self.decode_token(auth.credentials)
@@ -94,7 +90,6 @@ class Database:
 				with connection.cursor() as cursor:
 					# Connected to the database
 					toy_list = toys.toy
-					toy_names_literals = [str(sql.Literal(name)) for name in toy_list]
 					# Use parameterized query to avoid SQL injection
 					command = """
 					DELETE FROM toys
@@ -173,7 +168,7 @@ class Database:
 	def getChristmasList(self):
 		try:
 			christmas_list = []
-			command = f"SELECT DISTINCT ON (children.id, children.first_name, children.last_name) children.id, children.first_name,children.last_name,ARRAY_AGG(toys.name) AS toys FROM children JOIN toys ON children.id = toys.child_id GROUP BY children.id, children.first_name, children.last_name, toys.child_id;"
+			command = "SELECT DISTINCT ON (children.id, children.first_name, children.last_name) children.id, children.first_name,children.last_name,ARRAY_AGG(toys.name) AS toys FROM children JOIN toys ON children.id = toys.child_id GROUP BY children.id, children.first_name, children.last_name, toys.child_id;"
 			with self.pool.getconn() as self.connection:
 				with self.connection.cursor() as self.cursor:
 					self.cursor.execute(command)
@@ -184,7 +179,7 @@ class Database:
 						first_name = r[1]
 						last_name = r[2]
 						toy_list = r[3]
-						wish = Item(id=child_id,first_name=first_name,last_name=first_name,toy=toy_list)
+						wish = Item(id=child_id,first_name=first_name,last_name=last_name,toy=toy_list)
 						christmas_list.append(wish)
 
 			return christmas_list
