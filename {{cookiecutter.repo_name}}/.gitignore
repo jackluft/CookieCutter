@@ -1,0 +1,20 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyc
+*.pyd
+*.pyo
+*.pyc
+*.pyz
+*.pyw
+*.pyproj
+*.python-version
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Ruff
+.ruff_cache/
