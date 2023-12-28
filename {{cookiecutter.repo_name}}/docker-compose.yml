@@ -18,7 +18,7 @@ services:
       retries: 2
 
   flyway:
-    image: flyway/flyway:latest
+    image: flyway/flyway:10.4.1
     depends_on:
       postgres:
         condition: service_healthy
@@ -26,6 +26,8 @@ services:
       - FLYWAY_URL=jdbc:postgresql://postgres:5432/jacktable
       - FLYWAY_USER=postgres
       - FLYWAY_PASSWORD=postgres
+      - FLYWAY_SCHEMAS=public
+      - FLYWAY_BASELINE_ON_MIGRATE=true
     command: migrate
     volumes:
       - ./sql:/flyway/sql
