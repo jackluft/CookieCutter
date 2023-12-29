@@ -4,11 +4,11 @@ services:
     image: postgres:latest
     container_name: my_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jacktable
+      POSTGRES_USER: {{cookiecutter.postgres_user}}
+      POSTGRES_PASSWORD: {{cookiecutter.postgres_password}}
+      POSTGRES_DB: {{postgres_db}}
     ports:
-      - "5432:5432"
+      - "{{cookiecutter.postgres_port}}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,9 +23,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - FLYWAY_URL=jdbc:postgresql://postgres:5432/jacktable
-      - FLYWAY_USER=postgres
-      - FLYWAY_PASSWORD=postgres
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/{{postgres_db}}
+      - FLYWAY_USER={{cookiecutter.postgres_user}}
+      - FLYWAY_PASSWORD={{cookiecutter.postgres_password}}
       - FLYWAY_SCHEMAS=public
       - FLYWAY_BASELINE_ON_MIGRATE=true
     command: migrate
@@ -43,12 +43,12 @@ services:
     environment:
       PORT: 80
       POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB_NAME: jacktable
+      POSTGRES_PORT: {{cookiecutter.postgres_port}}
+      POSTGRES_USERNAME: {{cookiecutter.postgres_user}}
+      POSTGRES_PASSWORD: {{cookiecutter.postgres_password}}
+      POSTGRES_DB_NAME: {{postgres_db}}
     ports:
-      - "80:80"
+      - "{{cookiecutter.api_port}}:80"
 
 volumes:
   postgres_data:
