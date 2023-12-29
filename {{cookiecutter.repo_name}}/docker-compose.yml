@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: {{cookiecutter.postgres_user}}
       POSTGRES_PASSWORD: {{cookiecutter.postgres_password}}
-      POSTGRES_DB: {{postgres_db}}
+      POSTGRES_DB: {{cookiecutter.postgres_db}}
     ports:
       - "{{cookiecutter.postgres_port}}:5432"
     volumes:
@@ -23,7 +23,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - FLYWAY_URL=jdbc:postgresql://postgres:5432/{{postgres_db}}
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/{{cookiecutter.postgres_db}}
       - FLYWAY_USER={{cookiecutter.postgres_user}}
       - FLYWAY_PASSWORD={{cookiecutter.postgres_password}}
       - FLYWAY_SCHEMAS=public
@@ -46,7 +46,7 @@ services:
       POSTGRES_PORT: {{cookiecutter.postgres_port}}
       POSTGRES_USERNAME: {{cookiecutter.postgres_user}}
       POSTGRES_PASSWORD: {{cookiecutter.postgres_password}}
-      POSTGRES_DB_NAME: {{postgres_db}}
+      POSTGRES_DB_NAME: {{cookiecutter.postgres_db}}
     ports:
       - "{{cookiecutter.api_port}}:80"
 
