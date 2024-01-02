@@ -1,4 +1,4 @@
-#Welcome to the Christmas API
+Welcome to the Christmas API
 ---------------------------------------------------------------------------------------------------------------------------------------
 To get started make sure you have docker & docker-compose installed on your local machine.
 If you wish to customize the postgres setting like: (username,password,port). Navigate to the docker-compose.yml file to changes this enviroment variables.
