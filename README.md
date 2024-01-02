@@ -22,6 +22,9 @@ postgres_port [5432]:
 api_port [80]:
 
 In this exmaple I set the directory Name to "Temp"
-and the the postgres database settings to the default values, which are showen in the square backets []
+and the the postgres database settings to the default values, which are showen in the square backets [].
+This API is written in Python with the FastAPI framework, this API uses JWT for authenication. To set the
+Password for the JWT signature and the type of hash algorithm go to the file settings.json. By default,
+the password will be set to password="test1245", and algorithm="HS256". Feel free to changes these values.
 
 
