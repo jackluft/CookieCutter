@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer, HTTPBearer,HTTPAuthorizationC
 from fastapi.responses import JSONResponse
 import jwt
 import os
+import json
 import uvicorn
 import sys
 
@@ -18,14 +19,27 @@ POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB_NAME = os.getenv("POSTGRES_DB_NAME")
 
-SECRET_KEY = "supersecretpassword"
-ALGORITM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 #Pool conection count
 #min number of connections to pool
 min_pool: int = 1
 #max number of connections to pool
 max_pool: int = 20
+
+def JWT_Settings():
+	#This function will set the global variable for the jWT token and algorithm
+	file = "settings.json"
+	with open(file,'r') as f:
+		data = json.load(f)
+		password = data["password"]
+		alg = data["algorithm"]
+		return {"password": password,"algorithm":alg}
+	return {"Error opening file"}
+jwt_config = JWT_Settings()
+SECRET_KEY = jwt_config["password"]
+ALGORITM = jwt_config["algorithm"]
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 #Classes
 class Item(BaseModel):
 	id: Optional[int] = None
@@ -48,7 +62,7 @@ class AuthHandler():
 		return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITM)
 	def decode_token(self,token):
 		try:
-			payload = jwt.decode(token,self.secret,algorithms=["HS256"])
+			payload = jwt.decode(token,SECRET_KEY,algorithms=[ALGORITM])
 			return payload['sub']
 		except jwt.ExpiredSignatureError:
 			raise  HTTPException(status_code=401,detail="signature has expired")
